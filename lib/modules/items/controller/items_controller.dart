@@ -1,42 +1,42 @@
-// PATH: lib/modules/items/controller/items_controller.dart
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/item_model.dart';
-import '../repo/items_repository.dart';
 
-final itemsRepositoryProvider = Provider<ItemsRepository>((ref) {
-  return ItemsRepository();
-});
+class ItemsState {
+  final bool isSaving;
+  final String? errorMessage;
 
-final itemsControllerProvider =
-    StateNotifierProvider<ItemsController, List<ItemModel>>((ref) {
-      final repo = ref.read(itemsRepositoryProvider);
-      return ItemsController(repo);
-    });
+  const ItemsState({this.isSaving = false, this.errorMessage});
 
-class ItemsController extends StateNotifier<List<ItemModel>> {
-  final ItemsRepository _repository;
-
-  ItemsController(this._repository) : super([]) {
-    loadItems();
-  }
-
-  void loadItems() {
-    state = _repository.getAllItems();
-  }
-
-  void addItem(ItemModel item) {
-    _repository.addItem(item);
-    loadItems();
-  }
-
-  void updateItem(ItemModel updated) {
-    _repository.updateItem(updated);
-    loadItems();
-  }
-
-  void deleteItem(String id) {
-    _repository.deleteItem(id);
-    loadItems();
+  ItemsState copyWith({bool? isSaving, String? errorMessage}) {
+    return ItemsState(
+      isSaving: isSaving ?? this.isSaving,
+      errorMessage: errorMessage,
+    );
   }
 }
+
+class ItemsController extends StateNotifier<ItemsState> {
+  ItemsController() : super(const ItemsState());
+
+  Future<void> createItem(ItemModel item) async {
+    try {
+      state = state.copyWith(isSaving: true, errorMessage: null);
+
+      // TODO: Replace this with your real API/service call
+      await Future.delayed(const Duration(seconds: 1));
+
+      // If success:
+      state = state.copyWith(isSaving: false);
+    } catch (e) {
+      state = state.copyWith(
+        isSaving: false,
+        errorMessage: 'Failed to save item: $e',
+      );
+    }
+  }
+}
+
+final itemsControllerProvider =
+    StateNotifierProvider<ItemsController, ItemsState>(
+      (ref) => ItemsController(),
+    );

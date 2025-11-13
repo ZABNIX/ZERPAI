@@ -1,43 +1,73 @@
-// PATH: lib/core/theme/app_theme.dart
+// FILE: lib/core/theme/app_theme.dart
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  static ThemeData get lightTheme {
-    final base = ThemeData.light();
-    const primaryColor = Color(0xFF0C9E7A);
-    const backgroundColor = Color(0xFFF4F5FA);
-    final colorScheme = ColorScheme.fromSeed(
-      seedColor: primaryColor,
-      brightness: Brightness.light,
-    );
+  static const Color primaryColor = Color(0xFF0F6CBD); // Zoho-like blue
+  static const Color greyBackground = Color(0xFFF5F6FA);
+  static const Color textPrimary = Colors.black87;
 
-    return base.copyWith(
-      useMaterial3: true,
-      colorScheme: colorScheme,
-      primaryColor: primaryColor,
-      scaffoldBackgroundColor: backgroundColor,
-      textTheme: GoogleFonts.interTextTheme(base.textTheme),
-      appBarTheme: const AppBarTheme(
-        elevation: 1,
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
-        foregroundColor: Colors.black87,
-        iconTheme: IconThemeData(color: Colors.black87),
+  static ThemeData lightTheme = ThemeData(
+    useMaterial3: true,
+
+    scaffoldBackgroundColor: greyBackground,
+
+    colorScheme: const ColorScheme.light(
+      primary: primaryColor,
+      secondary: primaryColor,
+    ),
+
+    appBarTheme: const AppBarTheme(
+      backgroundColor: Colors.white,
+      elevation: 0.5,
+      iconTheme: IconThemeData(color: textPrimary),
+      titleTextStyle: TextStyle(
+        color: textPrimary,
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
       ),
-      cardTheme: CardTheme(
-        color: Colors.white,
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ),
+
+    // ✔ FIXED: updated to CardThemeData
+    cardTheme: newMethod(),
+
+    inputDecorationTheme: InputDecorationTheme(
+      border: OutlineInputBorder(
+        borderSide: BorderSide(color: Color(0xFFE0E0E0)),
+        borderRadius: BorderRadius.circular(4),
       ),
-      inputDecorationTheme: InputDecorationTheme(
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-        isDense: true,
-        fillColor: Colors.white,
+      focusedBorder: const OutlineInputBorder(
+        borderSide: BorderSide(color: primaryColor, width: 1.4),
       ),
-      buttonTheme: base.buttonTheme.copyWith(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    ),
+
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: primaryColor,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+      ),
+    ),
+
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        side: const BorderSide(color: primaryColor),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+      ),
+    ),
+  );
+
+  static CardThemeData newMethod() {
+    return const CardThemeData(
+      elevation: 1,
+      color: Colors.white,
+      surfaceTintColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(8)),
       ),
     );
   }
