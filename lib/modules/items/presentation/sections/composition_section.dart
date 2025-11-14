@@ -1,7 +1,8 @@
 // FILE: lib/modules/items/presentation/sections/composition_section.dart
 
 import 'package:flutter/material.dart';
-import '../../models/item_model.dart';
+
+import '../../models/item_composition_model.dart';
 
 class CompositionSection extends StatefulWidget {
   final Function(List<ItemComposition>) onChanged;

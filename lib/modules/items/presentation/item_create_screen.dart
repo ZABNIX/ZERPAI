@@ -3,216 +3,188 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+// Controller + Model
 import '../controller/items_controller.dart';
 import '../models/item_model.dart';
 
-// Import section widgets
+// Sections
 import 'sections/composition_section.dart';
 import 'sections/formulation_section.dart';
 import 'sections/sales_section.dart';
 import 'sections/purchase_section.dart';
 
+// Composition model
+import '../models/item_composition_model.dart';
+
 enum ItemTab { composition, formulation, sales, purchase }
 
 class ItemCreateScreen extends ConsumerStatefulWidget {
-  const ItemCreateScreen({Key? key}) : super(key: key);
+  const ItemCreateScreen({super.key});
 
   @override
   ConsumerState<ItemCreateScreen> createState() => _ItemCreateScreenState();
 }
 
 class _ItemCreateScreenState extends ConsumerState<ItemCreateScreen> {
-  final _formKey = GlobalKey<FormState>();
+  ItemTab selectedTab = ItemTab.composition;
 
-  // Basic fields
-  String _type = 'Goods';
-  final _nameCtrl = TextEditingController();
-  final _billingNameCtrl = TextEditingController();
-  final _itemCodeCtrl = TextEditingController();
-  final _skuCtrl = TextEditingController();
-  String? _unitPack;
-  String? _category;
-  bool _returnable = true;
-  final _hsnCtrl = TextEditingController();
-  String _taxPreference = 'Taxable';
-  String? _ecomStatus;
+  // Form controllers
+  final nameCtrl = TextEditingController();
+  final skuCtrl = TextEditingController();
+  final categoryCtrl = TextEditingController();
+  final mrpCtrl = TextEditingController();
 
-  // Tax rates
-  String _intraStateTaxRate = 'GST12(12%)';
-  String _interStateTaxRate = 'IGST12(12%)';
-
-  // Tabs
-  ItemTab _currentTab = ItemTab.composition;
-
-  // Composition data (comes from child widget)
-  List<ItemComposition> _compositionList = [];
-
-  // Bottom settings
-  String? _buyingRule;
-  bool _trackInventory = false;
-  bool _trackBinLocation = false;
-
-  @override
-  void dispose() {
-    _nameCtrl.dispose();
-    _billingNameCtrl.dispose();
-    _itemCodeCtrl.dispose();
-    _skuCtrl.dispose();
-    _hsnCtrl.dispose();
-    super.dispose();
-  }
-
-  void updateComposition(List<ItemComposition> list) {
-    _compositionList = list;
-  }
-
-  Future<void> _onSave() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    final item = ItemModel(
-      type: _type,
-      name: _nameCtrl.text.trim(),
-      billingName: _billingNameCtrl.text.trim(),
-      itemCode: _itemCodeCtrl.text.trim(),
-      sku: _skuCtrl.text.trim(),
-      unitPack: _unitPack ?? "",
-      category: _category,
-      returnable: _returnable,
-      hsnCode: _hsnCtrl.text.trim(),
-      taxPreference: _taxPreference,
-      ecommerceStatus: _ecomStatus,
-      intraStateTaxRate: _intraStateTaxRate,
-      interStateTaxRate: _interStateTaxRate,
-      trackActiveIngredients: true,
-      compositions: _compositionList,
-      buyingRule: _buyingRule,
-      trackInventory: _trackInventory,
-      trackBinLocation: _trackBinLocation,
-    );
-
-    await ref.read(itemsControllerProvider.notifier).createItem(item);
-    Navigator.pop(context);
-  }
+  // Stores composition rows sent from CompositionSection
+  List<ItemComposition> compositionRows = [];
 
   @override
   Widget build(BuildContext context) {
+    final itemsState = ref.watch(itemsControllerProvider);
+    final itemsController = ref.read(itemsControllerProvider.notifier);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
       appBar: AppBar(
+        title: const Text("New Item"),
         backgroundColor: Colors.white,
-        elevation: 0.5,
-        title: const Text(
-          "Item Registration Request",
-          style: TextStyle(color: Colors.black87),
-        ),
+        foregroundColor: Colors.black87,
       ),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1200),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        children: [
-                          _buildTopSection(),
-                          const SizedBox(height: 20),
-                          _buildDefaultTaxCard(),
-                          const SizedBox(height: 20),
-                          _buildTabs(),
-                          const SizedBox(height: 10),
-                          _buildTabSection(),
-                          const SizedBox(height: 20),
-                          _buildBottomOptions(),
-                        ],
+
+      backgroundColor: const Color(0xfff5f7fb),
+
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            _buildBasicDetailsCard(),
+            const SizedBox(height: 16),
+            _buildTabBar(),
+            const SizedBox(height: 16),
+            _buildTabContent(),
+            const SizedBox(height: 30),
+
+            // SAVE BUTTON
+            ElevatedButton(
+              onPressed: itemsState.isSaving
+                  ? null
+                  : () async {
+                      final item = Item(
+                        name: nameCtrl.text.trim(),
+                        sku: skuCtrl.text.trim(),
+                        category: categoryCtrl.text.trim(),
+                        mrp: double.tryParse(mrpCtrl.text),
+                      );
+
+                      // In future: attach compositionRows to item request
+
+                      await itemsController.createItem(item);
+
+                      if (mounted) Navigator.pop(context);
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blueAccent,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 40,
+                  vertical: 14,
+                ),
+              ),
+              child: itemsState.isSaving
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text(
+                      "Save Item",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Colors.white,
                       ),
                     ),
-                  ),
-                  _buildSaveButtons(),
-                ],
-              ),
             ),
-          ),
+          ],
         ),
       ),
     );
   }
 
-  // ---------------- UI builders ---------------------
-
-  Widget _buildTopSection() {
-    // SAME UI AS PREVIOUS ANSWER (I won’t repeat to reduce length)
-    // This contains: type, name, billing name, item code, sku, unit pack,
-    // category, returnable, HSN, Tax Preference, Ecommerce, and Image Card.
-
-    // I WILL RE-POST THIS PART FULLY IF YOU WANT.
+  // ---------------- BASIC DETAILS FORM ----------------
+  Widget _buildBasicDetailsCard() {
     return Container(
-      height: 200,
-      color: Colors.white,
-      child: const Center(
-        child: Text("TOP BASIC FIELDS CARD (same as earlier code)"),
-      ),
-    );
-  }
-
-  Widget _buildDefaultTaxCard() {
-    return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [Text("Default Tax Rates (UI same as previous code)")],
+        children: [
+          const Text(
+            "Basic Information",
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 17),
+          ),
+          const SizedBox(height: 16),
+
+          _textField("Item Name", nameCtrl),
+          const SizedBox(height: 12),
+
+          _textField("SKU", skuCtrl),
+          const SizedBox(height: 12),
+
+          _textField("Category", categoryCtrl),
+          const SizedBox(height: 12),
+
+          _textField("MRP", mrpCtrl, keyboard: TextInputType.number),
+        ],
       ),
     );
   }
 
-  Widget _buildTabs() {
-    return Row(
-      children: [
-        _tab(ItemTab.composition, "Composition Information"),
-        _tab(ItemTab.formulation, "Formulate Information"),
-        _tab(ItemTab.sales, "Sales Information"),
-        _tab(ItemTab.purchase, "Purchase Information"),
-      ],
-    );
-  }
-
-  Widget _tab(ItemTab tab, String label) {
-    final active = _currentTab == tab;
-    return InkWell(
-      onTap: () => setState(() => _currentTab = tab),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: active ? Colors.blue : Colors.transparent,
-              width: 2,
+  // ---------------- TOP TAB BAR ----------------
+  Widget _buildTabBar() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      padding: const EdgeInsets.all(4),
+      child: Row(
+        children: ItemTab.values.map((tab) {
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() => selectedTab = tab),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  color: selectedTab == tab
+                      ? Colors.blueAccent
+                      : Colors.transparent,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  tab.name[0].toUpperCase() + tab.name.substring(1),
+                  style: TextStyle(
+                    color: selectedTab == tab ? Colors.white : Colors.black87,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
             ),
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: active ? Colors.blue : Colors.black87,
-            fontWeight: active ? FontWeight.w600 : FontWeight.w400,
-          ),
-        ),
+          );
+        }).toList(),
       ),
     );
   }
 
-  Widget _buildTabSection() {
-    switch (_currentTab) {
+  // ---------------- TAB CONTENT ----------------
+  Widget _buildTabContent() {
+    switch (selectedTab) {
       case ItemTab.composition:
-        return CompositionSection(onChanged: updateComposition);
+        return CompositionSection(
+          onChanged: (rows) {
+            setState(() {
+              compositionRows = rows;
+            });
+          },
+        );
 
       case ItemTab.formulation:
         return const FormulationSection();
@@ -225,38 +197,18 @@ class _ItemCreateScreenState extends ConsumerState<ItemCreateScreen> {
     }
   }
 
-  Widget _buildBottomOptions() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
-          Text("Buying rules + Track Inventory + Track Bin Location"),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSaveButtons() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          ElevatedButton(
-            onPressed: _onSave,
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-            child: const Text("Save"),
-          ),
-          const SizedBox(width: 10),
-          OutlinedButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
-        ],
+  // ---------------- REUSABLE TEXT FIELD ----------------
+  Widget _textField(
+    String label,
+    TextEditingController ctrl, {
+    TextInputType keyboard = TextInputType.text,
+  }) {
+    return TextField(
+      controller: ctrl,
+      keyboardType: keyboard,
+      decoration: InputDecoration(
+        labelText: label,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }

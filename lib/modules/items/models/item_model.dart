@@ -1,68 +1,48 @@
-// PATH: lib/modules/items/models/item_model.dart
+// FILE: lib/modules/items/models/item_model.dart
 
-class ItemModel {
-  final String id;
+class Item {
+  final String? id;
   final String name;
-  final String sku;
-  final String category;
-  final double mrp;
-  final double ptr;
-  final bool isActive;
+  final String? sku;
+  final String? category;
+  final double? mrp;
 
-  const ItemModel({
-    required this.id,
-    required this.name,
-    required this.sku,
-    required this.category,
-    required this.mrp,
-    required this.ptr,
-    this.isActive = true,
-  });
+  Item({this.id, required this.name, this.sku, this.category, this.mrp});
 
-  /// Convert model to Map (later used for Firebase/JSON)
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'name': name,
-      'sku': sku,
-      'category': category,
-      'mrp': mrp,
-      'ptr': ptr,
-      'isActive': isActive,
-    };
-  }
-
-  /// Convert Map to model
-  factory ItemModel.fromMap(Map<String, dynamic> map) {
-    return ItemModel(
-      id: map['id'],
-      name: map['name'],
-      sku: map['sku'],
-      category: map['category'],
-      mrp: (map['mrp'] ?? 0).toDouble(),
-      ptr: (map['ptr'] ?? 0).toDouble(),
-      isActive: map['isActive'] ?? true,
-    );
-  }
-
-  /// Copy with updated values
-  ItemModel copyWith({
+  Item copyWith({
     String? id,
     String? name,
     String? sku,
     String? category,
     double? mrp,
-    double? ptr,
-    bool? isActive,
   }) {
-    return ItemModel(
+    return Item(
       id: id ?? this.id,
       name: name ?? this.name,
       sku: sku ?? this.sku,
       category: category ?? this.category,
       mrp: mrp ?? this.mrp,
-      ptr: ptr ?? this.ptr,
-      isActive: isActive ?? this.isActive,
     );
+  }
+
+  // For API / DB support
+  factory Item.fromJson(Map<String, dynamic> json) {
+    return Item(
+      id: json['id']?.toString(),
+      name: json['name'] ?? "",
+      sku: json['sku'],
+      category: json['category'],
+      mrp: json['mrp'] != null ? double.tryParse(json['mrp'].toString()) : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      "id": id,
+      "name": name,
+      "sku": sku,
+      "category": category,
+      "mrp": mrp,
+    };
   }
 }
