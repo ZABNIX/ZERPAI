@@ -1,7 +1,11 @@
+// FILE: lib/modules/items/controller/items_controller.dart
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'package:zerpai_erp/modules/items/models/item_model.dart';
 import 'package:zerpai_erp/modules/items/repo/items_repository.dart';
-import '../repo/item_repository_provider.dart';
-import '../models/item_model.dart';
+import 'package:zerpai_erp/modules/items/repo/item_repository_provider.dart';
+
 import 'items_state.dart';
 
 class ItemsController extends StateNotifier<ItemsState> {
@@ -17,7 +21,7 @@ class ItemsController extends StateNotifier<ItemsState> {
       final items = await repo.getItems();
       state = state.copyWith(items: items, isLoading: false);
     } catch (e) {
-      state = state.copyWith(error: "Failed to load items");
+      state = state.copyWith(error: "Failed to load items", isLoading: false);
     }
   }
 

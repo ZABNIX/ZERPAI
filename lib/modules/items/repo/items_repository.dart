@@ -20,7 +20,11 @@ class MockItemRepository implements ItemRepository {
 
   @override
   Future<Item?> getItemById(String id) async {
-    return _items.firstWhere((i) => i.id == id);
+    try {
+      return _items.firstWhere((i) => i.id == id);
+    } catch (_) {
+      return null;
+    }
   }
 
   @override
@@ -34,6 +38,9 @@ class MockItemRepository implements ItemRepository {
   @override
   Future<Item> updateItem(Item item) async {
     final index = _items.indexWhere((i) => i.id == item.id);
+    if (index == -1) {
+      throw StateError('Item with id ${item.id} not found');
+    }
     _items[index] = item;
     return item;
   }

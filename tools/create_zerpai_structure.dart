@@ -3,6 +3,8 @@
 // Run with: dart run tools/create_zerpai_structure.dart
 //
 // Creates the FULL Zerpai ERP folder + file structure.
+//
+// ignore_for_file: avoid_print
 
 import 'dart:io';
 
