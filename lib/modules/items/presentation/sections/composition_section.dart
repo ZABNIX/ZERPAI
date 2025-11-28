@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 
 import '../../models/item_composition_model.dart';
 import 'package:zerpai_erp/shared/widgets/inputs/dropdown_input.dart';
-import 'package:zerpai_erp/shared/widgets/inputs/custom_text_field.dart';
 
 class CompositionSection extends StatefulWidget {
   final Function(List<ItemComposition>) onChanged;
