@@ -11,10 +11,10 @@ import 'package:zerpai_erp/modules/items/models/item_composition_model.dart';
 // Shared Inputs
 import 'package:zerpai_erp/shared/widgets/inputs/shared_field_layout.dart';
 import 'package:zerpai_erp/shared/widgets/inputs/custom_text_field.dart';
-import 'package:zerpai_erp/shared/widgets/inputs/text_input.dart';
 import 'package:zerpai_erp/shared/widgets/inputs/dropdown_input.dart';
 import 'package:zerpai_erp/shared/widgets/inputs/radio_input.dart';
-import 'package:zerpai_erp/shared/widgets/inputs/field_label.dart';
+import 'package:zerpai_erp/shared/widgets/inputs/category_dropdown.dart';
+
 import 'package:zerpai_erp/shared/widgets/z_button.dart';
 import 'package:zerpai_erp/shared/widgets/zoho_layout.dart';
 
@@ -39,6 +39,234 @@ class ItemCreateScreen extends ConsumerStatefulWidget {
 
 class _ItemCreateScreenState extends ConsumerState<ItemCreateScreen> {
   ItemTab selectedTab = ItemTab.composition;
+
+  // ---------- UNIT CONFIG DIALOG ----------
+
+  void _openUnitConfigDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) {
+        final List<_UnitRow> rows = [
+          _UnitRow('box', 'BOX'),
+          _UnitRow('cm', 'CMS'),
+          _UnitRow('dz', 'DOZ'),
+          _UnitRow('ft', 'FTS'),
+          _UnitRow('g', 'GMS'),
+          _UnitRow('in', 'INC'),
+          _UnitRow('kg', 'KGS'),
+          _UnitRow('km', 'KME'),
+        ];
+
+        const uqcOptions = <String>[
+          'BOX',
+          'CMS',
+          'DOZ',
+          'FTS',
+          'GMS',
+          'INC',
+          'KGS',
+          'KME',
+        ];
+
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 80,
+            vertical: 40,
+          ),
+          child: StatefulBuilder(
+            builder: (ctx, setDialogState) {
+              return ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: 760,
+                  maxHeight: 520,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // ----- Title bar -----
+                    Container(
+                      padding: const EdgeInsets.fromLTRB(24, 18, 16, 12),
+                      child: Row(
+                        children: [
+                          const Text(
+                            'Configure Units',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF111827),
+                            ),
+                          ),
+                          const Spacer(),
+                          IconButton(
+                            icon: const Icon(Icons.close, size: 18),
+                            splashRadius: 18,
+                            onPressed: () => Navigator.of(ctx).pop(),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 1, color: Color(0xFFE5E7EB)),
+
+                    // ----- Header row -----
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                      child: Row(
+                        children: const [
+                          Expanded(
+                            child: Text(
+                              'Unit*',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF6B7280),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 16),
+                          Expanded(
+                            child: Text(
+                              'Unique Quantity Code (UQC)',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF6B7280),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 32),
+                        ],
+                      ),
+                    ),
+
+                    // ----- Scrollable rows -----
+                    Expanded(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        itemCount: rows.length,
+                        itemBuilder: (context, index) {
+                          final row = rows[index];
+
+                          return MouseRegion(
+                            onEnter: (_) =>
+                                setDialogState(() => row.isHovered = true),
+                            onExit: (_) =>
+                                setDialogState(() => row.isHovered = false),
+                            child: Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Row(
+                                children: [
+                                  // Unit text field
+                                  Expanded(
+                                    child: SizedBox(
+                                      height: 36,
+                                      child: CustomTextField(
+                                        controller: row.unitCtrl,
+                                        height: 36,
+                                        hintText: '',
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+
+                                  // UQC dropdown
+                                  Expanded(
+                                    child: SizedBox(
+                                      height: 36,
+                                      child: FormDropdown<String>(
+                                        value: row.uqcValue,
+                                        items: uqcOptions,
+                                        hint: 'Select UQC',
+                                        onChanged: (v) {
+                                          setDialogState(() {
+                                            row.uqcValue = v;
+                                          });
+                                        },
+                                        allowClear: true,
+                                      ),
+                                    ),
+                                  ),
+
+                                  const SizedBox(width: 8),
+
+                                  // Delete icon on hover
+                                  AnimatedOpacity(
+                                    opacity: row.isHovered ? 1 : 0,
+                                    duration: const Duration(milliseconds: 120),
+                                    child: IconButton(
+                                      icon: const Icon(
+                                        Icons.close,
+                                        size: 16,
+                                        color: Color(0xFFEF4444),
+                                      ),
+                                      splashRadius: 16,
+                                      onPressed: () {
+                                        setDialogState(() {
+                                          rows.removeAt(index);
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+
+                    const Divider(height: 1, color: Color(0xFFE5E7EB)),
+
+                    // ----- Footer -----
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(18, 10, 18, 12),
+                      child: Row(
+                        children: [
+                          TextButton.icon(
+                            onPressed: () {
+                              setDialogState(() {
+                                rows.add(_UnitRow('', ''));
+                              });
+                            },
+                            icon: const Icon(
+                              Icons.add_circle_outline,
+                              size: 18,
+                              color: Color(0xFF2563EB),
+                            ),
+                            label: const Text(
+                              'Add New',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Color(0xFF2563EB),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          const Spacer(),
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(),
+                            child: const Text('Save'),
+                          ),
+                          const SizedBox(width: 8),
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(),
+                            child: const Text('Cancel'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
 
   // ---------------- BASIC INFO ----------------
   bool isGoods = true;
@@ -107,6 +335,16 @@ class _ItemCreateScreenState extends ConsumerState<ItemCreateScreen> {
   // ---------------- COMPOSITION (Goods ONLY) ----------------
   List<ItemComposition> _compositionRows = [];
 
+  // ---------------- CATEGORY GROUPS (for parent–child dropdown) --------
+  final List<CategoryGroup> _categoryGroups = const [
+    CategoryGroup(
+      parent: 'MEDICINES',
+      children: ['OTHER BRANDS', 'MARKETED BRANDS', 'UNMARKED BRANDS', 'Test'],
+    ),
+    CategoryGroup(parent: 'Shabin', children: ['deethi']),
+    CategoryGroup(parent: 'Test category', children: ['PARENT']),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final itemsState = ref.watch(itemsControllerProvider);
@@ -114,7 +352,7 @@ class _ItemCreateScreenState extends ConsumerState<ItemCreateScreen> {
 
     return ZohoLayout(
       pageTitle: 'New Item',
-      enableBodyScroll: false, // inner layout handles scrolling
+      enableBodyScroll: false,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -231,7 +469,7 @@ class _ItemCreateScreenState extends ConsumerState<ItemCreateScreen> {
           ),
           const SizedBox(height: 12),
 
-          // UNIT – with settings row at bottom
+          // UNIT
           SharedFieldLayout(
             label: 'Unit',
             required: true,
@@ -242,32 +480,20 @@ class _ItemCreateScreenState extends ConsumerState<ItemCreateScreen> {
               onChanged: (v) => setState(() => unitPack = v),
               showSettings: true,
               settingsLabel: 'Manage Units...',
-              onSettingsTap: _openUnitSettings,
+              onSettingsTap: _openUnitConfigDialog,
             ),
           ),
+
           const SizedBox(height: 12),
 
-          // CATEGORY – with settings row at bottom
+          // CATEGORY (parent–child dropdown)
           SharedFieldLayout(
             label: 'Category',
-            child: FormDropdown<String>(
+            child: CategoryDropdown(
+              groups: _categoryGroups,
               value: categoryCtrl.text.isEmpty ? null : categoryCtrl.text,
-              items: const [
-                'Analgesics',
-                'Antibiotics',
-                'Gastro',
-                'demo1',
-                'demo2',
-                'demo3',
-                'demo4',
-                'demo',
-              ],
-              hint: "Select Category",
               onChanged: (v) => setState(() => categoryCtrl.text = v ?? ''),
-              showSettings: true,
-              settingsLabel: 'Manage Categories...',
-              onSettingsTap: _openCategorySettings,
-              allowClear: true, // 🔴 this adds the red X
+              onManageCategoriesTap: _openCategorySettings,
             ),
           ),
 
@@ -319,16 +545,11 @@ class _ItemCreateScreenState extends ConsumerState<ItemCreateScreen> {
 
         SharedFieldLayout(
           label: 'Category',
-          child: FormDropdown<String>(
+          child: CategoryDropdown(
+            groups: _categoryGroups,
             value: categoryCtrl.text.isEmpty ? null : categoryCtrl.text,
-            items: const ['Consultation', 'Service', 'Maintenance'],
-            hint: "Select Category",
             onChanged: (v) => setState(() => categoryCtrl.text = v ?? ''),
-            showSettings: true,
-            settingsLabel: 'Manage Categories...',
-            onSettingsTap: _openCategorySettings,
-
-            allowClear: true,
+            onManageCategoriesTap: _openCategorySettings,
           ),
         ),
         const SizedBox(height: 12),
@@ -466,7 +687,7 @@ class _ItemCreateScreenState extends ConsumerState<ItemCreateScreen> {
           ),
           const SizedBox(width: 8),
           SizedBox(
-            width: 24, // small, just enough for the icon
+            width: 24,
             height: fieldHeight,
             child: Align(
               alignment: Alignment.center,
@@ -603,6 +824,7 @@ class _ItemCreateScreenState extends ConsumerState<ItemCreateScreen> {
   }
 
   // ---------------- TAB BODY ----------------
+
   Widget _buildTabBody() {
     if (isGoods) {
       switch (selectedTab) {
@@ -610,7 +832,6 @@ class _ItemCreateScreenState extends ConsumerState<ItemCreateScreen> {
           return CompositionSection(
             onChanged: (rows) => setState(() => _compositionRows = rows),
           );
-
         case ItemTab.formulation:
           return FormulationSection(
             dimXCtrl: dimXCtrl,
@@ -677,18 +898,14 @@ class _ItemCreateScreenState extends ConsumerState<ItemCreateScreen> {
                   );
                 },
           );
-
         case ItemTab.sales:
-          // fall through below (shared for goods + services)
           break;
-
         case ItemTab.purchase:
-          // fall through below (handled after switch)
           break;
       }
     }
 
-    // ---------- SALES TAB (Goods + Services) ----------
+    // SALES TAB
     if (selectedTab == ItemTab.sales) {
       return SalesSection(
         sellingPriceCtrl: sellingPriceCtrl,
@@ -749,7 +966,7 @@ class _ItemCreateScreenState extends ConsumerState<ItemCreateScreen> {
       );
     }
 
-    // ---------- PURCHASE TAB (Goods + Services) ----------
+    // PURCHASE TAB
     return PurchaseSection(
       costPriceCtrl: costPriceCtrl,
       currency: purchaseCurrency,
@@ -1092,26 +1309,6 @@ class _ItemCreateScreenState extends ConsumerState<ItemCreateScreen> {
     );
   }
 
-  void _openUnitSettings() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Manage Units'),
-          content: const Text(
-            'Later you can navigate to your Units master screen from here.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Close'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   void _openCategorySettings() {
     showDialog(
       context: context,
@@ -1131,4 +1328,16 @@ class _ItemCreateScreenState extends ConsumerState<ItemCreateScreen> {
       },
     );
   }
+}
+
+// Small helper model for Unit dialog only.
+class _UnitRow {
+  final TextEditingController unitCtrl;
+  String? uqcValue;
+  bool isHovered;
+
+  _UnitRow(String unit, String uqc)
+    : unitCtrl = TextEditingController(text: unit),
+      uqcValue = uqc,
+      isHovered = false;
 }

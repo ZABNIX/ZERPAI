@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 /// - Search bar
 /// - Optional bottom settings row
 /// - Optional clear (X) icon inside the field
+/// - Optional custom row builder + non-selectable items
 class FormDropdown<T> extends StatefulWidget {
   final T? value;
   final List<T> items;
@@ -21,6 +22,15 @@ class FormDropdown<T> extends StatefulWidget {
   /// (use this for NON-mandatory fields only).
   final bool allowClear;
 
+  /// Optional custom row builder for items (used by Category tree).
+  /// If null, a simple Text(item.toString()) is used.
+  final Widget Function(T item, bool isSelected, bool isHovered)? itemBuilder;
+
+  /// Optional per-item enable/disable. Disabled items:
+  /// - are not clickable
+  /// - do not get hover / selected background
+  final bool Function(T item)? isItemEnabled;
+
   const FormDropdown({
     super.key,
     required this.value,
@@ -31,6 +41,8 @@ class FormDropdown<T> extends StatefulWidget {
     this.settingsLabel = 'Configure...',
     this.onSettingsTap,
     this.allowClear = false,
+    this.itemBuilder,
+    this.isItemEnabled,
   });
 
   @override
@@ -47,7 +59,7 @@ class _FormDropdownState<T> extends State<FormDropdown<T>> {
 
   late List<T> _filteredItems;
 
-  // NEW: track which row is currently hovered
+  // Hover tracking
   int? _hoveredIndex;
 
   static const double _fieldHeight = 44.0;
@@ -62,7 +74,6 @@ class _FormDropdownState<T> extends State<FormDropdown<T>> {
   @override
   void didUpdateWidget(covariant FormDropdown<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // If items list changes, reset filter
     if (oldWidget.items != widget.items) {
       _filteredItems = List<T>.from(widget.items);
       _filterItems(_searchCtrl.text);
@@ -105,16 +116,13 @@ class _FormDropdownState<T> extends State<FormDropdown<T>> {
 
   void _showOverlay() {
     if (_overlayEntry != null) return;
-
     final overlay = Overlay.of(context);
     if (overlay == null) return;
 
     _overlayEntry = OverlayEntry(builder: (context) => _buildDropdownOverlay());
-
     overlay.insert(_overlayEntry!);
     setState(() => _isOpen = true);
 
-    // focus search after overlay is drawn
     Future.delayed(const Duration(milliseconds: 30), () {
       if (mounted) {
         _searchFocus.requestFocus();
@@ -212,7 +220,7 @@ class _FormDropdownState<T> extends State<FormDropdown<T>> {
 
                         const Divider(height: 1, color: Color(0xFFE5E7EB)),
 
-                        // Items list with custom hover & selected colors
+                        // Items list
                         Builder(
                           builder: (context) {
                             const double itemHeight = 36.0;
@@ -238,37 +246,58 @@ class _FormDropdownState<T> extends State<FormDropdown<T>> {
                                   final item = _filteredItems[index];
                                   final bool isSelected = item == widget.value;
                                   final bool isHovered = _hoveredIndex == index;
+                                  final bool enabled =
+                                      widget.isItemEnabled?.call(item) ?? true;
 
                                   Color bgColor;
                                   Color textColor;
 
-                                  if (isSelected) {
-                                    bgColor = const Color(
-                                      0xFF1B8EF1,
-                                    ); // solid blue
+                                  if (isSelected && enabled) {
+                                    bgColor = const Color(0xFF1B8EF1);
                                     textColor = Colors.white;
-                                  } else if (isHovered) {
-                                    bgColor = const Color(
-                                      0xFFE5F1FF,
-                                    ); // light blue hover
+                                  } else if (isHovered && enabled) {
+                                    bgColor = const Color(0xFFE5F1FF);
                                     textColor = const Color(0xFF111827);
                                   } else {
                                     bgColor = Colors.transparent;
                                     textColor = const Color(0xFF374151);
                                   }
 
+                                  final Widget defaultChild = Text(
+                                    item.toString(),
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: textColor,
+                                    ),
+                                  );
+
+                                  final Widget content =
+                                      widget.itemBuilder != null
+                                      ? widget.itemBuilder!(
+                                          item,
+                                          isSelected,
+                                          isHovered,
+                                        )
+                                      : defaultChild;
+
                                   return MouseRegion(
                                     onEnter: (_) {
+                                      if (!enabled) return;
                                       setState(() => _hoveredIndex = index);
                                     },
                                     onExit: (_) {
+                                      if (!enabled) return;
                                       setState(() => _hoveredIndex = null);
                                     },
-                                    cursor: SystemMouseCursors.click,
+                                    cursor: enabled
+                                        ? SystemMouseCursors.click
+                                        : SystemMouseCursors.basic,
                                     child: Material(
                                       color: bgColor,
                                       child: InkWell(
-                                        onTap: () => _handleItemTap(item),
+                                        onTap: enabled
+                                            ? () => _handleItemTap(item)
+                                            : null,
                                         splashColor: Colors.transparent,
                                         highlightColor: Colors.transparent,
                                         child: Container(
@@ -277,13 +306,7 @@ class _FormDropdownState<T> extends State<FormDropdown<T>> {
                                             horizontal: 12,
                                           ),
                                           alignment: Alignment.centerLeft,
-                                          child: Text(
-                                            item.toString(),
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              color: textColor,
-                                            ),
-                                          ),
+                                          child: content,
                                         ),
                                       ),
                                     ),
@@ -399,7 +422,7 @@ class _FormDropdownState<T> extends State<FormDropdown<T>> {
                       child: Icon(
                         Icons.close,
                         size: 14,
-                        color: Color(0xFFEF4444), // red
+                        color: Color(0xFFEF4444),
                       ),
                     ),
                   ),
